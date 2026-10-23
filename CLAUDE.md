@@ -97,7 +97,8 @@ npx prettier --write .    # printWidth 100, singleQuote, angular parser for *.ht
 - Use standalone components, and don't set `standalone: true`.
 - Use signals for state and `computed()` for derived state. Use `update`/`set` on signals, never `mutate`.
 - Use `input()`/`output()` instead of decorators, and `inject()` instead of constructor injection.
-- Use native control flow (`@if`/`@for`/`@switch`) and reactive forms.
+- Use native control flow (`@if`/`@for`/`@switch`).
+- Use **Signal Forms** (`form()` and `FormField` from `@angular/forms/signals`) for all forms. Do not use Reactive or Template-driven forms. See the `angular-developer` skill, `references/signal-forms.md`.
 - Use `class`/`style` bindings instead of `ngClass`/`ngStyle`. Use the `host` object instead of `@HostBinding`/`@HostListener`.
 - Lazy-load feature routes. Use `NgOptimizedImage` for static images.
 - Avoid `any`. Must pass AXE checks and meet WCAG AA.

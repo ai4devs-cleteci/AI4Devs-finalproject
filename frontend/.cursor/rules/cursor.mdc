@@ -33,7 +33,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use `input()` and `output()` functions instead of decorators
 - Use `computed()` for derived state
 - Prefer inline templates for small components
-- Prefer Reactive forms instead of Template-driven ones
+- Use Signal Forms (`@angular/forms/signals`) for all forms; do NOT use Reactive or Template-driven forms
 - Do NOT use `ngClass`, use `class` bindings instead
 - Do NOT use `ngStyle`, use `style` bindings instead
 - When using external templates/styles, use paths relative to the component TS file.
