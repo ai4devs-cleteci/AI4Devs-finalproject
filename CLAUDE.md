@@ -11,7 +11,7 @@ HRIS de Cleteci (gestión de personas). Monorepo con:
 - `infra/` — configuración del entorno local: realm de Keycloak e init de PostgreSQL.
 - `openspec/` — especificaciones con flujo OpenSpec (`schema: spec-driven`).
 
-El proyecto está en fase de scaffold: aún no hay módulos de dominio, rutas ni migraciones. La documentación, comentarios y mensajes de commit se escriben en español.
+El proyecto está en fase de scaffold: aún no hay módulos de dominio ni migraciones; el frontend ya tiene el shell de navegación con páginas provisionales por módulo. La documentación, comentarios y mensajes de commit se escriben en español.
 
 ## Entorno local
 
@@ -63,6 +63,13 @@ npx prettier --write .                 # formateo (printWidth 100, comillas simp
 ```
 
 - Bootstrap standalone (`main.ts` → `app.config.ts`): router, PrimeNG con preset Aura y modo oscuro activado por la clase `.dark` (igual que la variante `dark` de Tailwind en `styles.css`).
+- Shell (`src/app/layout/`): `shell/` monta el `Sidebar` compuesto de PrimeNG 22 (`primeng/sidebar`) con barra superior y `<router-outlet>`. `app.routes.ts` solo hace `loadChildren` de `shell/shell.routes.ts`, que define el shell y sus rutas hijas.
+- `layout/navigation.ts` (`NAVIGATION`) es la fuente única del menú lateral y de las rutas de módulos: una feature nueva se añade ahí y sustituye la página provisional (`shared/under-construction`) por su `loadChildren`. Rutas desconocidas → `shared/not-found`.
+- `LayoutService` guarda el estado del layout (breakpoint de 1024 px, sidebar colapsado en `hris.sidebar.open`, tema en `hris.theme`); `index.html` aplica `.dark` antes de arrancar Angular. `AppTitleStrategy` fija `document.title` y el título de la barra superior a partir del `title` de cada ruta.
+- Iconos con `@lucide/angular` (un componente por icono, `<svg lucideX>`; dinámicos con `[lucideIcon]`), no PrimeIcons. Lucide debe quedar fuera del bundle inicial: no importarlo desde `app.config.ts` ni desde código eager (esbuild lo empaqueta como un solo módulo y arrastra todos los iconos usados a `main`). Su configuración (`provideLucideConfig`) está en la ruta del shell.
+- Fuente base Inter (`@fontsource-variable/inter`, autoalojada) vía `--font-sans` en `styles.css`.
+- PrimeNG 22 exige licencia PrimeUI (`providePrimeNG({ license })`); sin ella muestra el aviso "Invalid PrimeUI License".
+- Tests: `src/test-setup.ts` sustituye el `localStorage` que Node ≥ 22 deja indefinido en jsdom; `src/testing/match-media.ts` simula `matchMedia`. Los tests del shell ejecutan `axe-core` (sin la regla de contraste, que jsdom no calcula).
 - Presupuestos de producción: 500 kB de aviso / 1 MB de error inicial; 4 kB / 8 kB por estilo de componente.
 - Hay un servidor MCP de Angular CLI configurado en `frontend/.vscode/mcp.json`.
 

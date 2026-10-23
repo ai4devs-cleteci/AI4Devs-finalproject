@@ -1,0 +1,107 @@
+<a href="#contenido" class="skip-link" (click)="skipToContent($event)">Saltar al contenido</a>
+
+<p-sidebar-layout class="h-svh overflow-hidden">
+  <p-sidebar
+    id="navegacion-principal"
+    [open]="open()"
+    (openChange)="setOpen($event)"
+    [collapsible]="isDesktop() ? 'icon' : 'offcanvas'"
+    [overlay]="!isDesktop()"
+  >
+    <p-sidebar-spacer />
+    <p-sidebar-aside>
+      <p-sidebar-panel>
+        <aside aria-label="Barra lateral" class="flex min-h-0 flex-1 flex-col">
+          <p-sidebar-header>
+            <div class="flex h-10 items-center gap-2 overflow-hidden">
+              <span
+                class="grid size-8 shrink-0 place-items-center rounded-md bg-primary-700 text-sm font-semibold text-white dark:bg-primary-400 dark:text-surface-950"
+                aria-hidden="true"
+                >HC</span
+              >
+              <span class="truncate font-semibold">{{ appName }}</span>
+            </div>
+          </p-sidebar-header>
+
+          <nav aria-label="Navegación principal" class="flex min-h-0 flex-1 flex-col">
+            <p-sidebar-content>
+              @for (group of navigation; track group.label; let groupIndex = $index) {
+                <p-sidebar-group role="group" [attr.aria-labelledby]="'nav-grupo-' + groupIndex">
+                  <p-sidebar-group-label [id]="'nav-grupo-' + groupIndex">{{
+                    group.label
+                  }}</p-sidebar-group-label>
+                  <p-sidebar-group-content>
+                    <p-sidebar-menu>
+                      @for (item of group.items; track item.path) {
+                        <p-sidebar-menu-item>
+                          <a
+                            pSidebarMenuButton
+                            [routerLink]="'/' + item.path"
+                            routerLinkActive
+                            #active="routerLinkActive"
+                            ariaCurrentWhenActive="page"
+                            [isActive]="active.isActive"
+                            [pTooltip]="item.label"
+                            tooltipPosition="right"
+                            [tooltipDisabled]="!showTooltips()"
+                          >
+                            <svg [lucideIcon]="item.icon" aria-hidden="true"></svg>
+                            <span>{{ item.label }}</span>
+                          </a>
+                        </p-sidebar-menu-item>
+                      }
+                    </p-sidebar-menu>
+                  </p-sidebar-group-content>
+                </p-sidebar-group>
+              }
+            </p-sidebar-content>
+          </nav>
+
+          <p-sidebar-footer>
+            <!-- Marcador hasta integrar la autenticación con Keycloak. -->
+            <div class="flex h-10 items-center gap-2 overflow-hidden">
+              <span
+                class="grid size-8 shrink-0 place-items-center rounded-full bg-surface-200 dark:bg-surface-700"
+              >
+                <svg lucideUserRound [size]="16" aria-hidden="true"></svg>
+              </span>
+              <span class="truncate text-sm">Usuario</span>
+            </div>
+          </p-sidebar-footer>
+        </aside>
+      </p-sidebar-panel>
+    </p-sidebar-aside>
+    <!-- El backdrop se muestra siempre que el sidebar está abierto: solo tiene sentido en modo overlay. -->
+    @if (!isDesktop()) {
+      <p-sidebar-backdrop />
+    }
+  </p-sidebar>
+
+  <p-sidebar-main class="min-w-0 overflow-y-auto">
+    <header
+      class="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-0 px-3 dark:border-surface-700 dark:bg-surface-900"
+    >
+      <button
+        type="button"
+        pButton
+        text
+        rounded
+        iconOnly
+        severity="secondary"
+        pSidebarTrigger
+        target="navegacion-principal"
+        aria-label="Mostrar u ocultar navegación"
+      >
+        <svg lucidePanelLeft pButtonIcon aria-hidden="true"></svg>
+      </button>
+      <span class="truncate font-semibold">{{ section() }}</span>
+      <div class="ml-auto">
+        <app-theme-toggle />
+      </div>
+    </header>
+
+    <main id="contenido" tabindex="-1" class="flex-1 p-4 outline-none lg:p-6">
+      <router-outlet />
+    </main>
+  </p-sidebar-main>
+</p-sidebar-layout>
