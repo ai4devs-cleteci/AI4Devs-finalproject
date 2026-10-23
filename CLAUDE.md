@@ -12,7 +12,7 @@ The hard deadline driving scope: annual time-off balances must generate automati
 
 The repo is an early scaffold. The README describes the target state, and several things in it **do not exist yet**:
 
-- There is no `infra/`, no `docker-compose.yml`, no `.env.example` and no Keycloak realm. There are no `local` or `seed` Spring profiles.
+- The local stack (`docker-compose.yml`) has only PostgreSQL and Keycloak. MinIO and MailHog are not there yet, and neither is `infra/terraform`. There are no `local` or `seed` Spring profiles, and the backend has no datasource or issuer configuration yet.
 - The backend package is `com.cleteci.erp` (artifact `cleteci-erp`), not `com.cleteci.hris` as the README shows.
 - Module boundaries are enforced with **Spring Modulith** (`spring-modulith-starter-*` in `pom.xml`), not ArchUnit.
 - Frontend unit tests use **Vitest** (via `@angular/build:unit-test`), not Jest. Playwright and an `e2e` script are not set up.
@@ -20,6 +20,19 @@ The repo is an early scaffold. The README describes the target state, and severa
 If you build any of these, follow the README's design rather than inventing a new one.
 
 ## Commands
+
+Local infrastructure (repo root):
+
+```bash
+cp .env.example .env
+docker compose up -d          # Postgres 16 on :5432, Keycloak 26 on :8081
+docker compose down -v        # also wipes data, so the realm and init scripts re-run
+```
+
+- **Postgres:** the app DB is `hris`/`hris`. Keycloak gets its own `keycloak` database, created by `infra/postgres/init/`, which only runs on a fresh volume.
+- **Keycloak:** the realm `hris` is imported from `infra/keycloak/realm-hris.json`, and only if the realm doesn't exist yet. Issuer: `http://localhost:8081/realms/hris`. Clients: `hris-frontend` is public with PKCE, and `hris-api` is bearer-only and is the access-token audience.
+- **Roles and users:** the realm roles are `people-talent`, `administracion`, `delivery-manager`, `direccion` and `colaborador`. There is one test user per role (`pyt@`, `admin@`, `dm@`, `direccion@`, `colaborador@cleteci.local`, password `dev`). The admin console login is `admin`/`admin`.
+- **Ports:** they can be overridden with `POSTGRES_PORT` and `KEYCLOAK_PORT` in `.env`.
 
 Backend (`backend/`, Java 25, Spring Boot 4.1, Maven wrapper):
 
