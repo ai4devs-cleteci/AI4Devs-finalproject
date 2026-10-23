@@ -36,3 +36,17 @@ if (typeof globalThis.localStorage === 'undefined') {
     value: new MemoryStorage(),
   });
 }
+
+/** jsdom no implementa `ResizeObserver`, que usan componentes de PrimeNG (p. ej., `p-tablist`). */
+class NoopResizeObserver implements ResizeObserver {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    configurable: true,
+    value: NoopResizeObserver,
+  });
+}

@@ -35,3 +35,8 @@ export function provideFakeAuth(user: CurrentUser | null = TEST_USER): Provider[
   fake.current.set(user);
   return [{ provide: AuthService, useValue: fake }];
 }
+
+/** Usuario de prueba con los roles indicados, p. ej. `testUser('pyt@cleteci.local', 'people-talent')`. */
+export function testUser(username: string, ...roles: HrisRole[]): CurrentUser {
+  return { id: `id-${username}`, username, name: username, email: username, roles };
+}

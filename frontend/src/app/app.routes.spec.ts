@@ -1,7 +1,10 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, TitleStrategy, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { provideFakeAuth } from '../testing/auth';
+import { FakeAuthService, provideFakeAuth, testUser } from '../testing/auth';
+import { AuthService } from './core/auth/auth.service';
 import { MatchMediaController, installMatchMedia } from '../testing/match-media';
 import { routes } from './app.routes';
 import { AppTitleStrategy } from './layout/app-title-strategy';
@@ -21,6 +24,8 @@ describe('routes', () => {
         provideRouter(routes),
         { provide: TitleStrategy, useExisting: AppTitleStrategy },
         provideFakeAuth(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -49,5 +54,32 @@ describe('routes', () => {
 
     expect(content().querySelector('h1')?.textContent).toContain('Página no encontrada');
     expect(harness.fixture.nativeElement.querySelector('nav')).not.toBeNull();
+  });
+
+  describe('colaboradores', () => {
+    const fake = () => TestBed.inject(AuthService) as unknown as FakeAuthService;
+
+    it('carga la feature en lugar de la página provisional', async () => {
+      fake().current.set(testUser('pyt@cleteci.local', 'people-talent'));
+      await harness.navigateByUrl('/colaboradores');
+
+      expect(content().querySelector('h1')?.textContent).toContain('Colaboradores');
+      expect(content().textContent).not.toContain('en construcción');
+    });
+
+    it('lleva a /sin-acceso al rol Colaborador', async () => {
+      fake().current.set(testUser('colaborador@cleteci.local', 'colaborador'));
+      await harness.navigateByUrl('/colaboradores');
+
+      expect(TestBed.inject(Router).url).toBe('/sin-acceso');
+      expect(content().querySelector('h1')?.textContent).toContain('No tienes acceso');
+    });
+
+    it('impide el alta a Dirección', async () => {
+      fake().current.set(testUser('direccion@cleteci.local', 'direccion'));
+      await harness.navigateByUrl('/colaboradores/nuevo');
+
+      expect(TestBed.inject(Router).url).toBe('/sin-acceso');
+    });
   });
 });

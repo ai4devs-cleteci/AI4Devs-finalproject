@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { provideLucideConfig } from '@lucide/angular';
 import { NAVIGATION } from '../navigation';
 import { Shell } from './shell';
@@ -19,12 +19,17 @@ export const SHELL_ROUTES: Routes = [
     providers: [provideLucideConfig({ size: 20, strokeWidth: 2 })],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
-      // Hasta que exista cada feature, su entrada del catálogo apunta a la página provisional.
-      ...NAVIGATION.flatMap((group) => group.items).map((item) => ({
-        path: item.path,
-        title: item.label,
-        loadComponent: loadUnderConstruction,
-      })),
+      // Cada entrada del catálogo carga su feature o, si aún no existe, la página provisional.
+      ...NAVIGATION.flatMap((group) => group.items).map((item): Route =>
+        item.loadChildren
+          ? { path: item.path, title: item.label, loadChildren: item.loadChildren }
+          : { path: item.path, title: item.label, loadComponent: loadUnderConstruction },
+      ),
+      {
+        path: 'sin-acceso',
+        title: 'Sin acceso',
+        loadComponent: () => import('../../shared/forbidden/forbidden').then((m) => m.Forbidden),
+      },
       {
         path: '**',
         title: 'Página no encontrada',

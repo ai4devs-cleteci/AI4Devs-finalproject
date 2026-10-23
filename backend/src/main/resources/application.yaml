@@ -1,3 +1,36 @@
 spring:
   application:
     name: cleteci-erp
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/hris}
+    username: ${SPRING_DATASOURCE_USERNAME:hris}
+    password: ${SPRING_DATASOURCE_PASSWORD:hris}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    # db/local añade datos que solo tienen sentido en el entorno local (p. ej., proyectos de ejemplo).
+    locations: ${HRIS_FLYWAY_LOCATIONS:classpath:db/migration,classpath:db/local}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${HRIS_AUTH_ISSUER:http://localhost:8081/realms/hris}
+          audiences: hris-api
+  mvc:
+    problemdetails:
+      enabled: true
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,modulith
+
+hris:
+  cors:
+    allowed-origins: ${HRIS_CORS_ALLOWED_ORIGINS:http://localhost:4200}

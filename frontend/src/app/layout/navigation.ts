@@ -10,6 +10,7 @@ import {
   LucideUserSearch,
   LucideUsers,
 } from '@lucide/angular';
+import { LoadChildren } from '@angular/router';
 
 export interface NavItem {
   readonly label: string;
@@ -18,6 +19,8 @@ export interface NavItem {
   readonly icon: LucideIcon;
   /** Roles de Keycloak con acceso; sin uso hasta integrar la autenticación. */
   readonly roles?: readonly string[];
+  /** Rutas de la feature; sin ellas, el módulo muestra la página provisional. */
+  readonly loadChildren?: LoadChildren;
 }
 
 export interface NavGroup {
@@ -31,7 +34,15 @@ export const NAVIGATION: readonly NavGroup[] = [
     label: 'Personas',
     items: [
       { label: 'Inicio', path: 'inicio', icon: LucideHouse },
-      { label: 'Colaboradores', path: 'colaboradores', icon: LucideUsers },
+      {
+        label: 'Colaboradores',
+        path: 'colaboradores',
+        icon: LucideUsers,
+        loadChildren: () =>
+          import('../features/colaboradores/colaboradores.routes').then(
+            (m) => m.COLABORADORES_ROUTES,
+          ),
+      },
       { label: 'Descansos y permisos', path: 'descansos', icon: LucideCalendarDays },
       { label: 'Ciclo de vida', path: 'ciclo-de-vida', icon: LucideRefreshCw },
     ],

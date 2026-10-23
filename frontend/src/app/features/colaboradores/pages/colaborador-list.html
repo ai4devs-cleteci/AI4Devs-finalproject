@@ -1,0 +1,125 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-6">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold">Colaboradores</h1>
+      <p class="text-muted-color">Registro de las personas de Cleteci.</p>
+    </div>
+    @if (puedeCrear()) {
+      <a pButton routerLink="nuevo">
+        <svg pButtonIcon lucidePlus aria-hidden="true"></svg>
+        <span pButtonLabel>Nuevo colaborador</span>
+      </a>
+    }
+  </header>
+
+  <form
+    role="search"
+    class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+    (submit)="$event.preventDefault()"
+  >
+    <div class="flex flex-col gap-2">
+      <label for="buscar-colaborador" class="font-medium">Buscar</label>
+      <input
+        pInputText
+        id="buscar-colaborador"
+        type="search"
+        placeholder="Nombre, documento o ID"
+        [formField]="filtrosForm.q"
+      />
+    </div>
+    <div class="flex flex-col gap-2">
+      <span id="filtro-unidad" class="font-medium">Unidad de producción</span>
+      <p-select
+        ariaLabelledBy="filtro-unidad"
+        [options]="opcionesUnidad()"
+        optionLabel="nombre"
+        optionValue="codigo"
+        [formField]="filtrosForm.unidad"
+      />
+    </div>
+    <div class="flex flex-col gap-2">
+      <span id="filtro-proyecto" class="font-medium">Proyecto</span>
+      <p-select
+        ariaLabelledBy="filtro-proyecto"
+        [options]="opcionesProyecto()"
+        optionLabel="nombre"
+        optionValue="codigo"
+        [formField]="filtrosForm.proyecto"
+      />
+    </div>
+    <div class="flex flex-col gap-2">
+      <span id="filtro-estado" class="font-medium">Estado</span>
+      <p-select
+        ariaLabelledBy="filtro-estado"
+        [options]="opcionesEstado"
+        optionLabel="nombre"
+        optionValue="codigo"
+        [formField]="filtrosForm.estado"
+      />
+    </div>
+  </form>
+
+  @if (error(); as error) {
+    <p-message severity="error">{{ error }}</p-message>
+  }
+
+  <p-table [value]="filas()" [loading]="resultado.isLoading()" ariaLabel="Colaboradores">
+    <ng-template #header>
+      <tr>
+        <th scope="col" [attr.aria-sort]="ariaSort('id')">
+          <button type="button" class="font-semibold" (click)="ordenar('id')">ID</button>
+        </th>
+        <th scope="col" [attr.aria-sort]="ariaSort('nombreCorto')">
+          <button type="button" class="font-semibold" (click)="ordenar('nombreCorto')">
+            Nombre
+          </button>
+        </th>
+        <th scope="col">Rol</th>
+        <th scope="col">Unidad</th>
+        <th scope="col">Proyecto</th>
+        <th scope="col">Estado</th>
+        <th scope="col" [attr.aria-sort]="ariaSort('fechaIngreso')">
+          <button type="button" class="font-semibold" (click)="ordenar('fechaIngreso')">
+            Fecha de ingreso
+          </button>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-colaborador>
+      <tr>
+        <td class="font-mono">{{ colaborador.id }}</td>
+        <td>
+          <a
+            [routerLink]="colaborador.id"
+            class="font-medium text-primary-700 underline-offset-4 hover:underline dark:text-primary-300"
+            >{{ colaborador.nombreCorto }}</a
+          >
+          <div class="text-sm text-muted-color">{{ colaborador.nombreCompleto }}</div>
+        </td>
+        <td>{{ colaborador.rol.nombre }}</td>
+        <td>{{ colaborador.unidadProduccion.nombre }}</td>
+        <td>{{ colaborador.proyecto?.nombre ?? 'Sin proyecto' }}</td>
+        <td><app-estado-tag [estado]="colaborador.estado" /></td>
+        <td>{{ fechaCorta(colaborador.fechaIngreso) }}</td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="7" class="py-8 text-center text-muted-color">
+          No hay colaboradores que coincidan con la búsqueda o los filtros.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (total() > 0) {
+    <p-paginator
+      [first]="criterios().page * criterios().size"
+      [rows]="criterios().size"
+      [totalRecords]="total()"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} de {totalRecords}"
+      (onPageChange)="cambiarPagina($event)"
+    />
+  }
+</section>

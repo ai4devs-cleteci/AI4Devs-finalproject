@@ -1,0 +1,487 @@
+<section class="mx-auto flex max-w-5xl flex-col gap-6">
+  <a
+    [routerLink]="volver"
+    class="inline-flex items-center gap-2 self-start font-medium text-primary-700 underline-offset-4 hover:underline dark:text-primary-300"
+  >
+    <svg lucideArrowLeft [size]="16" aria-hidden="true"></svg>
+    {{ id ? 'Volver a la ficha' : 'Volver al listado' }}
+  </a>
+
+  <header>
+    <h1 class="text-2xl font-semibold">{{ titulo }}</h1>
+    @if (id) {
+      <p class="text-muted-color">
+        ID <span class="font-mono">{{ id }}</span>
+      </p>
+    }
+    <p class="text-sm text-muted-color">Los campos marcados con * son obligatorios.</p>
+  </header>
+
+  @if (errorCarga(); as error) {
+    <p-message severity="error">{{ error }}</p-message>
+    <a
+      routerLink="/colaboradores"
+      class="font-medium text-primary-700 underline underline-offset-4 dark:text-primary-300"
+      >Ir al listado de colaboradores</a
+    >
+  } @else if (cargando()) {
+    <p class="text-muted-color" role="status">Cargando los datos del colaborador…</p>
+  } @else {
+    <form class="flex flex-col gap-6" novalidate (submit)="$event.preventDefault(); guardar()">
+      @if (conflicto()) {
+        <div
+          role="alert"
+          class="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-yellow-600 bg-yellow-50 p-4 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-100"
+        >
+          <p>
+            Otra persona modificó este registro mientras lo editabas. Recarga los datos actuales
+            para continuar; tus cambios no guardados se perderán.
+          </p>
+          <button pButton type="button" severity="secondary" (click)="recargar()">
+            <span pButtonLabel>Recargar datos</span>
+          </button>
+        </div>
+      }
+      @if (errorGeneral(); as error) {
+        <div role="alert">
+          <p-message severity="error">{{ error }}</p-message>
+        </div>
+      }
+
+      <fieldset
+        class="grid gap-4 rounded-lg border border-surface-200 p-6 sm:grid-cols-2 dark:border-surface-700"
+      >
+        <legend class="px-2 text-lg font-semibold">Identidad</legend>
+        <div class="flex flex-col gap-2" data-campo="nombreCompleto">
+          <label for="campo-nombreCompleto" class="font-medium">
+            Nombre completo
+            @if (obligatorio('nombreCompleto')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-nombreCompleto"
+            type="text"
+            autocomplete="name"
+            [attr.aria-invalid]="conError('nombreCompleto')"
+            [attr.aria-describedby]="describedBy('nombreCompleto')"
+            [formField]="f.nombreCompleto"
+          />
+          <app-campo-errores
+            errorId="error-nombreCompleto"
+            [estado]="f.nombreCompleto()"
+            [visible]="conError('nombreCompleto')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="nombreCorto">
+          <label for="campo-nombreCorto" class="font-medium">
+            Nombre corto
+            @if (obligatorio('nombreCorto')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-nombreCorto"
+            type="text"
+            [attr.aria-invalid]="conError('nombreCorto')"
+            [attr.aria-describedby]="describedBy('nombreCorto', 'ayuda-nombreCorto')"
+            [formField]="f.nombreCorto"
+          />
+          <p id="ayuda-nombreCorto" class="text-sm text-muted-color">
+            Nombre de uso interno, p. ej. María Pérez.
+          </p>
+          <app-campo-errores
+            errorId="error-nombreCorto"
+            [estado]="f.nombreCorto()"
+            [visible]="conError('nombreCorto')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="tipoDocumento">
+          <span id="etiqueta-tipoDocumento" class="font-medium">
+            Tipo de documento
+            @if (obligatorio('tipoDocumento')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-tipoDocumento"
+            [ariaLabelledBy]="labelledBy('tipoDocumento')"
+            [options]="opciones.tipoDocumento"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('tipoDocumento')"
+            [formField]="f.tipoDocumento"
+          />
+          <app-campo-errores
+            errorId="error-tipoDocumento"
+            [estado]="f.tipoDocumento()"
+            [visible]="conError('tipoDocumento')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="documento">
+          <label for="campo-documento" class="font-medium">
+            Documento de identidad
+            @if (obligatorio('documento')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-documento"
+            type="text"
+            [attr.aria-invalid]="conError('documento')"
+            [attr.aria-describedby]="describedBy('documento')"
+            [formField]="f.documento"
+          />
+          <app-campo-errores
+            errorId="error-documento"
+            [estado]="f.documento()"
+            [visible]="conError('documento')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="correoPersonal">
+          <label for="campo-correoPersonal" class="font-medium">
+            Correo personal
+            @if (obligatorio('correoPersonal')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-correoPersonal"
+            type="email"
+            autocomplete="email"
+            [attr.aria-invalid]="conError('correoPersonal')"
+            [attr.aria-describedby]="describedBy('correoPersonal')"
+            [formField]="f.correoPersonal"
+          />
+          <app-campo-errores
+            errorId="error-correoPersonal"
+            [estado]="f.correoPersonal()"
+            [visible]="conError('correoPersonal')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="telefono">
+          <label for="campo-telefono" class="font-medium">
+            Teléfono de contacto
+            @if (obligatorio('telefono')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-telefono"
+            type="tel"
+            autocomplete="tel"
+            [attr.aria-invalid]="conError('telefono')"
+            [attr.aria-describedby]="describedBy('telefono', 'ayuda-telefono')"
+            [formField]="f.telefono"
+          />
+          <p id="ayuda-telefono" class="text-sm text-muted-color">
+            Con código de país, p. ej. +584121234567.
+          </p>
+          <app-campo-errores
+            errorId="error-telefono"
+            [estado]="f.telefono()"
+            [visible]="conError('telefono')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="fechaNacimiento">
+          <label for="campo-fechaNacimiento" class="font-medium">
+            Fecha de nacimiento
+            @if (obligatorio('fechaNacimiento')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-fechaNacimiento"
+            type="date"
+            [attr.aria-invalid]="conError('fechaNacimiento')"
+            [attr.aria-describedby]="describedBy('fechaNacimiento')"
+            [formField]="f.fechaNacimiento"
+          />
+          <app-campo-errores
+            errorId="error-fechaNacimiento"
+            [estado]="f.fechaNacimiento()"
+            [visible]="conError('fechaNacimiento')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="genero">
+          <span id="etiqueta-genero" class="font-medium">
+            Género
+            @if (obligatorio('genero')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-genero"
+            [ariaLabelledBy]="labelledBy('genero')"
+            [options]="opciones.genero"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('genero')"
+            [formField]="f.genero"
+          />
+          <app-campo-errores
+            errorId="error-genero"
+            [estado]="f.genero()"
+            [visible]="conError('genero')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="nacionalidad">
+          <label for="campo-nacionalidad" class="font-medium">
+            Nacionalidad
+            @if (obligatorio('nacionalidad')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-nacionalidad"
+            type="text"
+            [attr.aria-invalid]="conError('nacionalidad')"
+            [attr.aria-describedby]="describedBy('nacionalidad')"
+            [formField]="f.nacionalidad"
+          />
+          <app-campo-errores
+            errorId="error-nacionalidad"
+            [estado]="f.nacionalidad()"
+            [visible]="conError('nacionalidad')"
+          />
+        </div>
+      </fieldset>
+      <fieldset
+        class="grid gap-4 rounded-lg border border-surface-200 p-6 sm:grid-cols-2 dark:border-surface-700"
+      >
+        <legend class="px-2 text-lg font-semibold">Posición y contrato</legend>
+        <div class="flex flex-col gap-2" data-campo="fechaIngreso">
+          <label for="campo-fechaIngreso" class="font-medium">
+            Fecha de ingreso
+            @if (obligatorio('fechaIngreso')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </label>
+          <input
+            pInputText
+            id="campo-fechaIngreso"
+            type="date"
+            [attr.aria-invalid]="conError('fechaIngreso')"
+            [attr.aria-describedby]="describedBy('fechaIngreso')"
+            [formField]="f.fechaIngreso"
+          />
+          <app-campo-errores
+            errorId="error-fechaIngreso"
+            [estado]="f.fechaIngreso()"
+            [visible]="conError('fechaIngreso')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="rolCodigo">
+          <span id="etiqueta-rolCodigo" class="font-medium">
+            Rol
+            @if (obligatorio('rolCodigo')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-rolCodigo"
+            [ariaLabelledBy]="labelledBy('rolCodigo')"
+            [options]="opciones.roles()"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('rolCodigo')"
+            [formField]="f.rolCodigo"
+          />
+          <app-campo-errores
+            errorId="error-rolCodigo"
+            [estado]="f.rolCodigo()"
+            [visible]="conError('rolCodigo')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="nivelCodigo">
+          <span id="etiqueta-nivelCodigo" class="font-medium">
+            Nivel
+            @if (obligatorio('nivelCodigo')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-nivelCodigo"
+            [ariaLabelledBy]="labelledBy('nivelCodigo')"
+            [options]="opciones.niveles()"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('nivelCodigo')"
+            [formField]="f.nivelCodigo"
+          />
+          <app-campo-errores
+            errorId="error-nivelCodigo"
+            [estado]="f.nivelCodigo()"
+            [visible]="conError('nivelCodigo')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="trayectoriaCodigo">
+          <span id="etiqueta-trayectoriaCodigo" class="font-medium">
+            Trayectoria
+            @if (obligatorio('trayectoriaCodigo')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-trayectoriaCodigo"
+            [ariaLabelledBy]="labelledBy('trayectoriaCodigo')"
+            [options]="opciones.trayectorias()"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('trayectoriaCodigo')"
+            [formField]="f.trayectoriaCodigo"
+          />
+          <app-campo-errores
+            errorId="error-trayectoriaCodigo"
+            [estado]="f.trayectoriaCodigo()"
+            [visible]="conError('trayectoriaCodigo')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="unidadCodigo">
+          <span id="etiqueta-unidadCodigo" class="font-medium">
+            Unidad de producción
+            @if (obligatorio('unidadCodigo')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-unidadCodigo"
+            [ariaLabelledBy]="labelledBy('unidadCodigo')"
+            [options]="opciones.unidades()"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('unidadCodigo')"
+            [formField]="f.unidadCodigo"
+          />
+          <app-campo-errores
+            errorId="error-unidadCodigo"
+            [estado]="f.unidadCodigo()"
+            [visible]="conError('unidadCodigo')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="modalidad">
+          <span id="etiqueta-modalidad" class="font-medium">
+            Modalidad
+            @if (obligatorio('modalidad')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-modalidad"
+            [ariaLabelledBy]="labelledBy('modalidad')"
+            [options]="opciones.modalidad"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('modalidad')"
+            [formField]="f.modalidad"
+          />
+          <app-campo-errores
+            errorId="error-modalidad"
+            [estado]="f.modalidad()"
+            [visible]="conError('modalidad')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="proyectoCodigo">
+          <span id="etiqueta-proyectoCodigo" class="font-medium">
+            Proyecto asignado
+            @if (obligatorio('proyectoCodigo')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-proyectoCodigo"
+            [ariaLabelledBy]="labelledBy('proyectoCodigo')"
+            [options]="opciones.proyectos()"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('proyectoCodigo')"
+            [formField]="f.proyectoCodigo"
+          />
+          @if (proyectoBloqueado()) {
+            <p id="ayuda-proyectoCodigo" class="text-sm text-muted-color">
+              El cambio de proyecto corresponde a su Delivery Manager.
+            </p>
+          }
+          <app-campo-errores
+            errorId="error-proyectoCodigo"
+            [estado]="f.proyectoCodigo()"
+            [visible]="conError('proyectoCodigo')"
+          />
+        </div>
+        <div class="flex flex-col gap-2" data-campo="paisResidenciaCodigo">
+          <span id="etiqueta-paisResidenciaCodigo" class="font-medium">
+            País de residencia
+            @if (obligatorio('paisResidenciaCodigo')) {
+              <span aria-hidden="true" class="text-red-700 dark:text-red-300">*</span>
+              <span class="sr-only">(obligatorio)</span>
+            }
+          </span>
+          <p-select
+            inputId="campo-paisResidenciaCodigo"
+            [ariaLabelledBy]="labelledBy('paisResidenciaCodigo')"
+            [options]="opciones.paises()"
+            optionLabel="nombre"
+            optionValue="codigo"
+            placeholder="Selecciona…"
+            appendTo="body"
+            [invalid]="conError('paisResidenciaCodigo')"
+            [formField]="f.paisResidenciaCodigo"
+          />
+          <app-campo-errores
+            errorId="error-paisResidenciaCodigo"
+            [estado]="f.paisResidenciaCodigo()"
+            [visible]="conError('paisResidenciaCodigo')"
+          />
+        </div>
+      </fieldset>
+
+      <div class="flex justify-end gap-2">
+        <a pButton [routerLink]="volver" severity="secondary" [outlined]="true">
+          <span pButtonLabel>Cancelar</span>
+        </a>
+        <button pButton type="submit" [loading]="guardando()">
+          <span pButtonLabel>Guardar</span>
+        </button>
+      </div>
+    </form>
+  }
+</section>
