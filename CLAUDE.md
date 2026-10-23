@@ -2,107 +2,83 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project
+## Proyecto
 
-HRIS Cleteci: an internal HR information system for about 50 employees. It covers employee records, lifecycle, time off, compensation, recruiting, skills, loans and reporting. It is an AI4Devs final project. `readme.md` (in Spanish) is the full product and architecture spec. It includes the data model (§3), user stories (§5) and tickets (§6). `prompts.md` logs the AI prompts used for each delivery. Domain language, docs and specs are in Spanish.
+HRIS de Cleteci (gestión de personas). Monorepo con:
 
-The hard deadline driving scope: annual time-off balances must generate automatically on **2027-01-01**.
+- `backend/` — Spring Boot 4.1 sobre Java 25 (Maven wrapper), paquete raíz `com.cleteci.erp`.
+- `frontend/` — Angular 22 + PrimeNG 22 (tema Aura) + Tailwind CSS 4 (`tailwindcss-primeui`).
+- `infra/` — configuración del entorno local: realm de Keycloak e init de PostgreSQL.
+- `openspec/` — especificaciones con flujo OpenSpec (`schema: spec-driven`).
 
-## Current state vs. the README
+El proyecto está en fase de scaffold: aún no hay módulos de dominio, rutas ni migraciones. La documentación, comentarios y mensajes de commit se escriben en español.
 
-The repo is an early scaffold. The README describes the target state, and several things in it **do not exist yet**:
-
-- The local stack (`docker-compose.yml`) has only PostgreSQL and Keycloak. MinIO and MailHog are not there yet, and neither is `infra/terraform`. There are no `local` or `seed` Spring profiles, and the backend has no datasource or issuer configuration yet.
-- The backend package is `com.cleteci.erp` (artifact `cleteci-erp`), not `com.cleteci.hris` as the README shows.
-- Module boundaries are enforced with **Spring Modulith** (`spring-modulith-starter-*` in `pom.xml`), not ArchUnit.
-- Frontend unit tests use **Vitest** (via `@angular/build:unit-test`), not Jest. Playwright and an `e2e` script are not set up.
-
-If you build any of these, follow the README's design rather than inventing a new one.
-
-## Commands
-
-Local infrastructure (repo root):
+## Entorno local
 
 ```bash
 cp .env.example .env
-docker compose up -d          # Postgres 16 on :5432, Keycloak 26 on :8081
-docker compose down -v        # also wipes data, so the realm and init scripts re-run
+docker compose up -d
 ```
 
-- **Postgres:** the app DB is `hris`/`hris`. Keycloak gets its own `keycloak` database, created by `infra/postgres/init/`, which only runs on a fresh volume.
-- **Keycloak:** the realm `hris` is imported from `infra/keycloak/realm-hris.json`, and only if the realm doesn't exist yet. Issuer: `http://localhost:8081/realms/hris`. Clients: `hris-frontend` is public with PKCE, and `hris-api` is bearer-only and is the access-token audience.
-- **Roles and users:** the realm roles are `people-talent`, `administracion`, `delivery-manager`, `direccion` and `colaborador`. There is one test user per role (`pyt@`, `admin@`, `dm@`, `direccion@`, `colaborador@cleteci.local`, password `dev`). The admin console login is `admin`/`admin`.
-- **Ports:** they can be overridden with `POSTGRES_PORT` and `KEYCLOAK_PORT` in `.env`.
+- PostgreSQL 16 en `localhost:5432` (BD `hris`, usuario/clave `hris`). El script `infra/postgres/init/01-keycloak-db.sh` crea además la BD `keycloak`; solo corre al inicializar el volumen por primera vez (para re-ejecutarlo: `docker compose down -v`).
+- Keycloak 26.4 en `localhost:8081` (admin/admin), importa `infra/keycloak/realm-hris.json` al arrancar.
 
-Backend (`backend/`, Java 25, Spring Boot 4.1, Maven wrapper):
+### Realm `hris` (Keycloak)
+
+- Roles de realm: `people-talent`, `administracion`, `delivery-manager`, `direccion`, `colaborador`.
+- Clientes: `hris-api` (bearer-only, lo usa el backend como resource server JWT) y `hris-frontend` (público, Authorization Code + PKCE S256, origen `http://localhost:4200`).
+- Usuarios de prueba, uno por rol: `pyt@`, `admin@`, `dm@`, `direccion@`, `colaborador@cleteci.local` (credenciales en el JSON del realm).
+
+## Backend (`backend/`)
 
 ```bash
-./mvnw verify                                  # build + all tests
-./mvnw test -Dtest=ClassName                   # single test class
-./mvnw test -Dtest=ClassName#method            # single test method
-./mvnw spring-boot:test-run                    # run app with a Testcontainers Postgres (TestCleteciErpApplication)
-./mvnw spring-boot:run
+./mvnw spring-boot:run                       # arrancar la app
+./mvnw spring-boot:test-run                  # arrancar con TestCleteciErpApplication (PostgreSQL vía Testcontainers)
+./mvnw test                                  # todos los tests (requiere Docker por Testcontainers)
+./mvnw test -Dtest=CleteciErpApplicationTests            # una clase
+./mvnw test -Dtest=CleteciErpApplicationTests#contextLoads  # un método
+./mvnw package
 ```
 
-Tests and `spring-boot:test-run` need Docker, because they start PostgreSQL through Testcontainers (`TestcontainersConfiguration`).
+Arquitectura y stack:
 
-Frontend (`frontend/`, Angular 22, PrimeNG 22 with the Aura theme, Tailwind 4 with `tailwindcss-primeui`):
+- **Spring Modulith**: la aplicación es un monolito modular. Cada módulo de dominio es un subpaquete directo de `com.cleteci.erp`; los demás módulos solo deben usar su API pública (paquete raíz del módulo) y comunicarse preferentemente por eventos. Incluye `spring-modulith-starter-jpa` (registro de publicaciones de eventos), actuator y observabilidad de Modulith.
+- Persistencia: Spring Data JPA + PostgreSQL, esquema gestionado con **Flyway** (`src/main/resources/db/migration`).
+- Seguridad: OAuth2 Resource Server (JWT emitidos por Keycloak, realm `hris`).
+- API REST con `spring-boot-starter-webmvc`, validación con Bean Validation, documentación OpenAPI con springdoc. Cliente HTTP saliente con `RestClient`.
+- Lombok está habilitado como annotation processor.
+- Tests de integración con Testcontainers (`TestcontainersConfiguration` aporta un PostgreSQL con `@ServiceConnection`; importarla con `@Import`).
+- `application.yaml` solo define el nombre de la app; la configuración de datasource/issuer está pendiente.
+
+Seguir la skill `backend/.claude/skills/spring-boot-guidelines/SKILL.md`: inyección por constructor, componentes package-private, `@ConfigurationProperties` tipadas, límites transaccionales en servicios, `open-in-view` desactivado, separar DTOs web de entidades, command objects para operaciones de negocio, manejo de excepciones centralizado, Testcontainers y puerto aleatorio en tests de integración.
+
+## Frontend (`frontend/`)
 
 ```bash
-npm ci
-npm start                 # ng serve on :4200
-npm run build
-npm test                  # ng test (Vitest + jsdom)
-npx ng test --include src/app/app.spec.ts   # single spec file
-npx prettier --write .    # printWidth 100, singleQuote, angular parser for *.html
+npm start                              # ng serve en http://localhost:4200
+npm run build                          # build de producción
+npm test                               # tests unitarios (Vitest vía @angular/build:unit-test, jsdom)
+npx ng test --include src/app/app.spec.ts   # un solo archivo de test
+npx prettier --write .                 # formateo (printWidth 100, comillas simples)
 ```
 
-## Target architecture (from readme.md §2)
+- Bootstrap standalone (`main.ts` → `app.config.ts`): router, PrimeNG con preset Aura y modo oscuro activado por la clase `.dark` (igual que la variante `dark` de Tailwind en `styles.css`).
+- Presupuestos de producción: 500 kB de aviso / 1 MB de error inicial; 4 kB / 8 kB por estilo de componente.
+- Hay un servidor MCP de Angular CLI configurado en `frontend/.vscode/mcp.json`.
 
-**Modular monolith with vertical slices per business context.** Top-level backend packages are `people` (M1), `recruiting` (M2), `lifecycle` (M3), `timeoff` (M4), `compensation` (M5), `skills` (M6), `finance` (M7), `reporting` (M9), plus the cross-cutting `platform` (security, calendar, export, notification, attachment, audit).
+Reglas obligatorias (de `frontend/AGENTS.md`, idénticas en `frontend/.claude/CLAUDE.md` y `frontend/.cursor/rules/cursor.mdc`):
 
-- **Organize by use case, not by layer. There is no cross-cutting `Service` layer.** Each use-case folder (for example `timeoff/request/`) is self-contained: `XxxController` (no logic), `XxxCommand` (record), `XxxHandler` (orchestration), `XxxPolicy` (a pure decision function with no data access, where most tests go), and `XxxResult` (a sealed interface of outcomes, handled with pattern matching).
-- **Don't use exceptions for business-rule outcomes.** Model them as sealed result types.
-- Where rules go:
-  - Concept invariants go in the aggregate. Example: an employee on probation can't request time off.
-  - Operation-specific rules go in the slice policy. Example: minimum notice, sufficient balance.
-  - Reads and lists project straight to SQL through `JdbcClient` and never load aggregates. Writes go through JPA aggregates.
-- Boundary rules that must be enforced by automated architecture tests:
-  - Contexts don't import each other's internals.
-  - Nothing outside `compensation`/`banking` references their entities.
-  - Read projections don't depend on aggregates.
-  - `platform` depends on no business context.
-  - Policies have no data-access dependencies.
-- Frontend `src/app/features/<context>/` mirrors the backend contexts one to one, alongside `core/` (auth, interceptors, guards) and `shared/`. TS types are meant to be generated from the backend's OpenAPI spec (springdoc), not hand-written.
+- Componentes standalone sin poner `standalone: true`; `input()`/`output()` en lugar de decoradores; `host` en el decorador en vez de `@HostBinding`/`@HostListener`.
+- Estado con signals y `computed()`; nunca `mutate`, usar `set`/`update`.
+- **Formularios solo con Signal Forms (`@angular/forms/signals`)**; no Reactive ni Template-driven.
+- Control flow nativo (`@if`, `@for`, `@switch`); bindings `class`/`style` en vez de `ngClass`/`ngStyle`.
+- Servicios con `providedIn: 'root'` e `inject()` en lugar de inyección por constructor.
+- Rutas de features con lazy loading; `NgOptimizedImage` para imágenes estáticas.
+- Accesibilidad: debe pasar AXE y cumplir WCAG AA.
+- TypeScript estricto, sin `any` (usar `unknown`).
 
-### Security model (a functional requirement, not polish)
+La skill `frontend/.agents/skills/angular-developer/` tiene referencias por tema (signal forms, resource/httpResource, routing, testing, Tailwind…) y pide ejecutar `ng build` tras generar código para verificar que compila.
 
-- Keycloak (OIDC) is the only identity authority. The backend is an OAuth2 resource server. **Deny by default**: an endpoint without an explicit authorization rule must be inaccessible.
-- Five roles: People & Talent, Administración, Delivery Manager, Dirección, Colaborador.
-- **Row-level scope is resolved in one component and applied inside the SQL query, never by filtering results afterwards.** A DM sees only employees on their projects; a Colaborador sees only themselves.
-- Compensation and banking data live in **separate PostgreSQL schemas** (`compensation`, `banking`, alongside `core`) with their own DB credentials. They are never columns on the employee table. DMs never see compensation. Only Administración sees banking data, and People & Talent does not.
-- Reads of compensation and banking data are audited, not just writes.
-- UI role-based hiding is a convenience only. Authorization tests must hit the API directly.
+## OpenSpec
 
-### Data conventions
-
-- Primary keys are `uuid` generated by the DB. Timestamps are always `timestamptz`.
-- Temporal history uses `effective_from`/`effective_to`, where null means current, with a PostgreSQL **exclusion constraint** against overlaps. Integration tests must run on real Postgres (Testcontainers), never an in-memory DB.
-- Use soft delete everywhere. Catalogs have an `active` flag. Departed employees are archived, never deleted.
-- Use ISO 3166-1 alpha-2 country codes and ISO 4217 currency codes. Every operation records its actor (`recorded_by`, `approved_by`, ...).
-- Use Flyway migrations. Every migration must be **backward compatible with the previous app version** because of rolling deploys. Renames and drops take two deployments.
-
-## Frontend conventions (frontend/AGENTS.md)
-
-- Use standalone components, and don't set `standalone: true`.
-- Use signals for state and `computed()` for derived state. Use `update`/`set` on signals, never `mutate`.
-- Use `input()`/`output()` instead of decorators, and `inject()` instead of constructor injection.
-- Use native control flow (`@if`/`@for`/`@switch`).
-- Use **Signal Forms** (`form()` and `FormField` from `@angular/forms/signals`) for all forms. Do not use Reactive or Template-driven forms. See the `angular-developer` skill, `references/signal-forms.md`.
-- Use `class`/`style` bindings instead of `ngClass`/`ngStyle`. Use the `host` object instead of `@HostBinding`/`@HostListener`.
-- Lazy-load feature routes. Use `NgOptimizedImage` for static images.
-- Avoid `any`. Must pass AXE checks and meet WCAG AA.
-
-## OpenSpec workflow
-
-Changes are planned with OpenSpec (`openspec/`, schema `spec-driven`). Use the `/opsx:*` commands or `openspec-*` skills to propose, apply, sync and archive changes. Specs live in `openspec/specs/`, active changes in `openspec/changes/`, and completed ones in `openspec/changes/archive/`.
+Los cambios se trabajan con el flujo OpenSpec: proponer → aplicar → archivar. Comandos disponibles: `/opsx:propose`, `/opsx:explore`, `/opsx:apply`, `/opsx:update`, `/opsx:sync`, `/opsx:archive` (también como skills `openspec-*`). Las especificaciones vigentes viven en `openspec/specs/` y los cambios en curso en `openspec/changes/` (los completados en `openspec/changes/archive/`).
