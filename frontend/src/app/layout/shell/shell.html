@@ -58,15 +58,67 @@
           </nav>
 
           <p-sidebar-footer>
-            <!-- Marcador hasta integrar la autenticación con Keycloak. -->
-            <div class="flex h-10 items-center gap-2 overflow-hidden">
-              <span
-                class="grid size-8 shrink-0 place-items-center rounded-full bg-surface-200 dark:bg-surface-700"
+            @if (user(); as user) {
+              <p-sidebar-menu>
+                <p-sidebar-menu-item>
+                  <button
+                    type="button"
+                    pSidebarMenuButton
+                    class="user-button"
+                    [attr.aria-label]="user.name"
+                    aria-haspopup="menu"
+                    [attr.aria-expanded]="userMenuOpen()"
+                    [attr.aria-controls]="userMenuOpen() ? 'menu-usuario_list' : null"
+                    [pTooltip]="user.name"
+                    tooltipPosition="right"
+                    [tooltipDisabled]="!showTooltips()"
+                    (click)="userMenu.toggle($event)"
+                  >
+                    <span
+                      class="grid size-8 shrink-0 place-items-center rounded-full bg-primary-100 text-xs font-semibold text-primary-800 dark:bg-primary-900 dark:text-primary-100"
+                      aria-hidden="true"
+                      >{{ initials() }}</span
+                    >
+                    <span class="flex min-w-0 flex-col leading-tight">
+                      <span class="truncate text-sm font-medium">{{ user.name }}</span>
+                      @if (roleLabel(); as role) {
+                        <span class="truncate text-xs text-surface-600 dark:text-surface-400">{{
+                          role
+                        }}</span>
+                      }
+                    </span>
+                  </button>
+                </p-sidebar-menu-item>
+              </p-sidebar-menu>
+
+              <p-menu
+                #userMenu
+                id="menu-usuario"
+                [popup]="true"
+                appendTo="body"
+                [model]="userMenuItems"
+                ariaLabel="Menú de usuario"
+                (onShow)="userMenuOpen.set(true)"
+                (onHide)="userMenuOpen.set(false)"
               >
-                <svg lucideUserRound [size]="16" aria-hidden="true"></svg>
-              </span>
-              <span class="truncate text-sm">Usuario</span>
-            </div>
+                <ng-template #start>
+                  <div class="px-3 pt-2 pb-1">
+                    <p class="truncate text-sm font-medium">{{ user.name }}</p>
+                    @if (user.email) {
+                      <p class="truncate text-xs text-surface-600 dark:text-surface-400">
+                        {{ user.email }}
+                      </p>
+                    }
+                  </div>
+                </ng-template>
+                <ng-template #item let-item>
+                  <a class="p-menu-item-link" tabindex="-1">
+                    <svg lucideLogOut [size]="16" class="p-menu-item-icon" aria-hidden="true"></svg>
+                    <span class="p-menu-item-label">{{ item.label }}</span>
+                  </a>
+                </ng-template>
+              </p-menu>
+            }
           </p-sidebar-footer>
         </aside>
       </p-sidebar-panel>

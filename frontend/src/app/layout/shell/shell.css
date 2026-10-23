@@ -19,3 +19,13 @@
 .skip-link:focus {
   transform: none;
 }
+
+/* Botón de usuario: avatar y dos líneas en expandido; en modo icono, solo el avatar. */
+.user-button {
+  height: 3rem;
+}
+
+/* Sin padding, el avatar (2rem) ocupa justo el botón; el texto queda oculto por el overflow. */
+p-sidebar[data-collapsible='icon'] .user-button.user-button {
+  padding: 0;
+}

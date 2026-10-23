@@ -1,11 +1,23 @@
-import { Component, DOCUMENT, Injector, afterNextRender, computed, inject } from '@angular/core';
+import {
+  Component,
+  DOCUMENT,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideDynamicIcon, LucidePanelLeft, LucideUserRound } from '@lucide/angular';
+import { LucideDynamicIcon, LucideLogOut, LucidePanelLeft } from '@lucide/angular';
+import { MenuItem } from 'primeng/api';
 import { ButtonDirective, ButtonIcon } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
 import { SidebarModule } from 'primeng/sidebar';
 import { TooltipModule } from 'primeng/tooltip';
 import { filter } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
+import { ROLE_LABELS, primaryRole } from '../../core/auth/roles';
 import { APP_NAME, AppTitleStrategy } from '../app-title-strategy';
 import { LayoutService } from '../layout.service';
 import { NAVIGATION } from '../navigation';
@@ -20,11 +32,12 @@ import { ThemeToggle } from '../theme-toggle/theme-toggle';
     RouterLinkActive,
     SidebarModule,
     TooltipModule,
+    MenuModule,
     ButtonDirective,
     ButtonIcon,
     LucideDynamicIcon,
+    LucideLogOut,
     LucidePanelLeft,
-    LucideUserRound,
     ThemeToggle,
   ],
   templateUrl: './shell.html',
@@ -37,6 +50,7 @@ export class Shell {
   private readonly layout = inject(LayoutService);
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
+  private readonly auth = inject(AuthService);
 
   protected readonly appName = APP_NAME;
   protected readonly navigation = NAVIGATION;
@@ -52,6 +66,28 @@ export class Shell {
   protected readonly showTooltips = computed(
     () => this.isDesktop() && !this.layout.desktopSidebarOpen(),
   );
+
+  protected readonly user = this.auth.user;
+
+  /** Iniciales de las dos primeras palabras del nombre, para el avatar. */
+  protected readonly initials = computed(() =>
+    (this.user()?.name ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join(''),
+  );
+
+  protected readonly roleLabel = computed(() => {
+    const role = primaryRole(this.user()?.roles ?? []);
+    return role ? ROLE_LABELS[role] : null;
+  });
+
+  protected readonly userMenuOpen = signal(false);
+  protected readonly userMenuItems: MenuItem[] = [
+    { label: 'Cerrar sesión', command: () => void this.auth.logout() },
+  ];
 
   constructor() {
     inject(Router)

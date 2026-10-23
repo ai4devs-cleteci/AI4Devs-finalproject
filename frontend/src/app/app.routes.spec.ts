@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, TitleStrategy, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { provideFakeAuth } from '../testing/auth';
 import { MatchMediaController, installMatchMedia } from '../testing/match-media';
 import { routes } from './app.routes';
 import { AppTitleStrategy } from './layout/app-title-strategy';
@@ -10,13 +11,17 @@ describe('routes', () => {
   let harness: RouterTestingHarness;
 
   // La primera importación de PrimeNG y Lucide en jsdom es lenta; se precarga fuera del timeout de cada test.
-  beforeAll(() => import('./layout/shell/shell.routes'), 60_000);
+  beforeAll(() => import('./layout/shell/shell.routes'), 180_000);
 
   beforeEach(async () => {
     localStorage.clear();
     media = installMatchMedia({ desktop: true });
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes), { provide: TitleStrategy, useExisting: AppTitleStrategy }],
+      providers: [
+        provideRouter(routes),
+        { provide: TitleStrategy, useExisting: AppTitleStrategy },
+        provideFakeAuth(),
+      ],
     });
     harness = await RouterTestingHarness.create();
   });
