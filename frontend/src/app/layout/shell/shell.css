@@ -20,6 +20,11 @@
   transform: none;
 }
 
+/* El icono de la entrada activa toma el azul del resaltado en lugar del gris atenuado. */
+.p-sidebar-menu-button[data-active='true'] svg {
+  color: inherit;
+}
+
 /* Botón de usuario: avatar y dos líneas en expandido; en modo icono, solo el avatar. */
 .user-button {
   height: 3rem;

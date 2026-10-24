@@ -7,4 +7,17 @@
 
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Azul de Cleteci para lo que se pinta sin PrimeNG (copia de CLETECI_PRIMARY, sincronizada por test). */
+  --color-cleteci-50: #f0f5ff;
+  --color-cleteci-100: #dce9ff;
+  --color-cleteci-200: #c3d9ff;
+  --color-cleteci-300: #9dc2ff;
+  --color-cleteci-400: #689ffd;
+  --color-cleteci-500: #0161ef;
+  --color-cleteci-600: #0154cf;
+  --color-cleteci-700: #0037c3;
+  --color-cleteci-800: #002c8d;
+  --color-cleteci-900: #001c63;
+  --color-cleteci-950: #00174d;
 }
