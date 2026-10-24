@@ -58,11 +58,7 @@
       </div>
     </header>
 
-    <p-tabs
-      [value]="seccionActiva()"
-      (valueChange)="seccionActiva.set($event ?? 'identidad')"
-      class="rounded-lg border border-surface-200 dark:border-surface-700"
-    >
+    <p-tabs [value]="seccionActiva()" (valueChange)="seccionActiva.set($event ?? 'identidad')">
       <p-tablist>
         @for (seccion of secciones(); track seccion.id) {
           <p-tab [value]="seccion.id">{{ seccion.titulo }}</p-tab>

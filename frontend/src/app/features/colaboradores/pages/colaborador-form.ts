@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideArrowLeft } from '@lucide/angular';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Card } from 'primeng/card';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
@@ -41,6 +42,7 @@ import {
     Message,
     ButtonDirective,
     ButtonLabel,
+    Card,
     LucideArrowLeft,
     CampoErrores,
   ],
